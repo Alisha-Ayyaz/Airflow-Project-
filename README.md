@@ -1,10 +1,36 @@
 # Airflow Project
 
-A local Apache Airflow learning project with runnable examples of DAG authoring, task dependencies, scheduling, asset-aware workflows, and DAG-to-DAG orchestration. The project runs Airflow with Docker Compose and stores its metadata in PostgreSQL.
+## Introduction
 
-## What is included
+This repository is a hands-on learning project for **Apache Airflow**, an open-source platform for authoring, scheduling, and monitoring workflows. It brings together a local Airflow environment and a collection of small Python DAG examples, so you can explore orchestration concepts in the UI and in code without needing a cloud account or an external data platform.
 
-The examples are in [`dags/`](./dags/). They are intended to be read, run, and modified as you learn Airflow:
+The examples build progressively from a first three-task workflow to more advanced patterns: passing data between tasks, running work in parallel, branching based on task results, defining schedules, reacting to data assets, and coordinating multiple DAGs. They are intentionally focused demonstrations rather than a single end-to-end business pipeline. Most tasks print or return simple example values; use them to understand Airflow behavior, then adapt the patterns to your own data sources and processing logic.
+
+The project runs Airflow with Docker Compose. The API server, scheduler, DAG processor, Celery worker, and triggerer work together to parse and run the DAGs. PostgreSQL stores Airflow metadata such as DAG runs, task-instance state, and connections, while Redis provides the Celery message broker. The DAG source remains in your local `dags/` directory and is mounted into the containers, making it easy to inspect and edit.
+
+### Project goals
+
+- Learn how an Airflow DAG describes a workflow and how tasks define its individual units of work.
+- See how dependencies control task order, parallel execution, and conditional branches.
+- Compare schedule presets, cron expressions, timezones, interval-based timetables, and special-date schedules.
+- Understand how task outputs can be shared using XComs and how asset-aware scheduling connects producer and consumer workflows.
+- Explore how one DAG can trigger and coordinate other DAGs.
+- Practice running, observing, and troubleshooting workflows in a self-contained local environment.
+
+### How to explore the project
+
+1. Start the Docker Compose environment using the instructions below.
+2. Open the Airflow UI and inspect the DAG graph and task details before triggering a workflow.
+3. Begin with `1_first_dag.py`, then compare the dependency, XCom, parallelism, and branching examples.
+4. Review the scheduling examples and note each timetable's schedule and timezone.
+5. Explore the asset and orchestration examples to see how workflows can depend on events or other DAGs.
+6. Modify one example at a time and inspect task logs and run history in the UI.
+
+> **Scope:** This repository is a local educational starter project, not a production-ready deployment. The sample tasks do not implement a real ETL pipeline, and the Compose configuration uses development defaults. Review schedules, credentials, networking, data handling, and operational requirements before adapting it for real workloads.
+
+## Workflow concepts demonstrated
+
+The examples are in [`dags/`](./dags/). This guide groups them by the concepts they demonstrate:
 
 | File | Topic |
 | --- | --- |
@@ -13,20 +39,32 @@ The examples are in [`dags/`](./dags/). They are intended to be read, run, and m
 | `3_operators.py` | Python and Bash task/operator examples |
 | `4_XCOMs_auto.py` | Passing task results with automatic XComs |
 | `5_XCOMs_kwargs.py` | Explicitly pushing and pulling XCom values |
-| `6_parallel_tasks.py` | Running independent tasks in parallel |
-| `7_branches.py` | Branching to different task paths |
+| `6_parallel_tasks.py` | Running independent tasks in parallel and combining dependencies |
+| `7_branches.py` | Selecting a task path conditionally |
 | `8_schedule_preset.py` | Scheduling with an Airflow preset such as `@daily` |
 | `9_schedule_cron.py` | Cron scheduling with an explicit timezone |
-| `10_schedule_delta.py` | Scheduling with a delta timetable |
-| `11_incremental_load.py` | Cron data intervals for incremental-load patterns |
+| `10_schedule_delta.py` | Scheduling with a time-delta timetable |
+| `11_incremental_load.py` | Cron data intervals and an incremental-load pattern |
 | `12_special_dates.py` | Scheduling on configured special dates |
-| `asset_13.py` | Producing a data asset |
-| `14_asset_dependent.py` | Running a workflow when an upstream asset is updated |
+| `asset_13.py` | Defining a scheduled data asset producer |
+| `14_asset_dependent.py` | Defining a workflow that depends on an upstream asset |
 | `dag_orchestrate_1.py` | First example workflow for DAG orchestration |
 | `dag_orchestrate_2.py` | Second example workflow for DAG orchestration |
 | `dag_orchestrate_parent.py` | Triggering child DAGs from a parent workflow |
 
-These are educational examples, not production data pipelines. Review each DAG's schedule and task behavior before enabling it in a shared environment.
+The numbered filenames provide a suggested starting order; the asset and orchestration examples are additional patterns to explore. Check each DAG's code and schedule before enabling it.
+
+## What happens when a DAG runs
+
+Airflow separates describing a workflow from executing it:
+
+1. **Author:** A Python file under `dags/` declares a DAG and its tasks. Dependencies describe which tasks must finish before others can start.
+2. **Parse:** The DAG processor reads the mounted files and makes valid DAG definitions available to Airflow.
+3. **Schedule or trigger:** The scheduler creates runs according to a DAG's schedule, or a user starts one manually from the UI or CLI.
+4. **Queue and execute:** The scheduler determines which tasks are ready. With the Celery executor, ready work is sent through Redis to a worker.
+5. **Record and observe:** Task and run state is stored in PostgreSQL and displayed in the UI. Task logs help diagnose failures.
+
+In this local setup, editing a file under `dags/` updates the mounted source. The DAG processor can then parse the updated definition without building a new image. A code edit does not automatically run the DAG; use the UI or CLI to trigger a run, or wait for its schedule.
 
 ## Architecture
 
