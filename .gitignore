@@ -1,0 +1,27 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+*.log
+*.sqlite
+*.sqlite3
+*.db
+
+# Virtual environments
+.venv/
+
+# Local environment variables and secrets
+.env
+.env.*
+!.env.example
+
+# Airflow runtime data and generated configuration
+/Config/
+/config/
+/Logs/
+/logs/
+/Plugins/
+/plugins/
